@@ -1,0 +1,11 @@
+alembic==1.13.2
+asyncpg==0.29.0
+fastapi==0.115.2
+gunicorn==23.0.0
+pgvector==0.3.2
+pydantic==2.9.2
+pydantic_settings==2.6.0
+python-dotenv==1.0.1
+sqladmin==0.20.0
+SQLAlchemy==2.0.30
+uvicorn==0.32.0
