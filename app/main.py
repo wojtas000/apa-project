@@ -8,12 +8,12 @@ from app.config import settings
 from app.database import sessionmanager
 from app.etl.router import router as etl_router
 from app.inference.router import router as inference_router
-# from app.admin import init_admin
+from app.admin import init_admin
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-# init_admin(app)
+init_admin(app)
 
 
 @app.get("/")
