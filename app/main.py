@@ -9,10 +9,16 @@ from app.database import sessionmanager
 from app.etl.router import router as etl_router
 from app.inference.router import router as inference_router
 from app.admin import init_admin
+from source.processors import Translator
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Translator.install_package(from_code='de', to_code='en')
+    yield
+
+app = FastAPI(lifespan=lifespan)
 init_admin(app)
 
 

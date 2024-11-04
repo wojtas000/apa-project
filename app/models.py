@@ -16,10 +16,11 @@ class Article(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     apa_id = Column(String, nullable=False)
-    title_english = Column(String, nullable=True)
-    article_english = Column(Text, nullable=True)
-    title_german = Column(String, nullable=True)
-    article_german = Column(Text, nullable=True)
+    title= Column(String, nullable=True)
+    article = Column(Text, nullable=True)
+    language = Column(String(3), nullable=True)
+    published_date = Column(DateTime, nullable=True)
+
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -98,7 +99,7 @@ class ArticleEntitySentimentTopic(Base):
     entity_id = Column(UUID(as_uuid=True), ForeignKey("entities.id"), nullable=False)
     sentiment_id = Column(UUID(as_uuid=True), ForeignKey("sentiments.id"), nullable=False)
     topic_id = Column(UUID(as_uuid=True), ForeignKey("topics.id"), nullable=False)
-    model_id = Column(UUID(as_uuid=True), ForeignKey("models.id"), nullable=False)
+    model_id = Column(UUID(as_uuid=True), ForeignKey("models.id"), nullable=True)
 
     article = relationship("Article", back_populates="article_entity_sentiment_topics")
     entity = relationship("Entity", back_populates="article_entity_sentiment_topics")
@@ -122,3 +123,27 @@ class Model(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     article_entity_sentiment_topics = relationship("ArticleEntitySentimentTopic", back_populates="model")
+
+class Job(Base):
+    __tablename__ = "jobs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    type = Column(Enum("ETL", "TRAIN", "PREDICT", "NAMED_ENTITY_LINKING", name='job_types_enum'), nullable=False)
+    status = Column(Enum("PENDING", "RUNNING", "COMPLETED", "FAILED", name='job_status_enum'), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
+    apa_id = Column(String, nullable=True)
+    status = Column(Enum("PENDING", "RUNNING", "COMPLETED", "FAILED", name='task_status_enum'), nullable=False)
+
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    job = relationship("Job", back_populates="tasks")
