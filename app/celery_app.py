@@ -1,11 +1,12 @@
 from celery import Celery
+from app.config import settings
 
 celery_app = Celery(
     "background_tasks",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/1",
+    broker=settings.redis_url,
+    backend=settings.redis_url
 )
-
+celery_app.autodiscover_tasks(['app.etl.tasks'])
 celery_app.conf.update(
     result_expires=3600,
 )

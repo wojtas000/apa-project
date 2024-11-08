@@ -1,64 +1,75 @@
-from celery_app import celery_app
-from sqlalchemy.orm import Session
-from app.database import get_db
-from app.models import Article, ArticleEntitySentimentTopic
-from source.processors import Preprocessor, Translator
+import asyncio
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from celery.app import Celery
+from app.celery_app import celery_app
+from app.database import sessionmanager
+from app.models import Article, ArticleEntitySentimentTopic, Entity, Sentiment, Topic
+from app.config import settings
+from app.etl.preprocessor import Preprocessor
+from app.etl.translator import Translator
+
 
 translator = Translator(from_code='de', to_code='en') 
+preprocessor = Preprocessor()
 
 @celery_app.task
 def process_article_task(article: dict):
-    db: Session = next(get_db())
+    asyncio.run(_process_article_task_async(article))
 
-    def map_triplet(triplet):
-        entity_apa_id, topic_apa_id, sentiment_apa_id = triplet
-        
-        entity = db.query(Entity).filter(Entity.apa_id == entity_apa_id).first()
-        topic = db.query(Topic).filter(Topic.apa_id == topic_apa_id).first()
-        sentiment = db.query(Sentiment).filter(Sentiment.apa_id == sentiment_apa_id).first()
-        
-        return {
-            "entity_id": entity.id if entity else None,
-            "topic_id": topic.id if topic else None,
-            "sentiment_id": sentiment.id if sentiment else None
-        }
 
-    try:
-        text = Preprocessor.process_text(article["article"])
-        title = Preprocessor.process_text(article["title"])
-        sentiments = Preprocessor.process_sentiment(article["sentiments"])
-
+async def _process_article_task_async(article: dict):
+    async with sessionmanager.session() as session:
+        text = preprocessor.process_text(article["article"])
+        title = preprocessor.process_text(article["title"])
+        sentiments = preprocessor.process_sentiment(article["sentiments"])
+        date = preprocessor.fix_date(article["published_date"])
         article_english = Article(
             apa_id=article["apa_id"],
-            published_date=article["published_date"],
-            title=translator.translate(title),
-            article=translator.translate(text),
+            published_date=date,
+            title=preprocessor.fix_punctuation(translator.translate(title)),
+            article=preprocessor.fix_punctuation(translator.translate(text)),
             language="ENG"
         )
         article_german = Article(
             apa_id=article["apa_id"],
-            published_date=article["published_date"],
+            published_date=date,
             title=title,
             article=text,
             language="GER"
         )
     
-        db.add(article_english)
-        db.add(article_german)
-        await db.commit()
-        db.refresh(article_english)
+        session.add(article_english)
+        session.add(article_german)
+        await session.commit()
+        await session.refresh(article_english)
 
-        triplets = Preprocessor.process_sentiment(article["sentiments"])
-
-        db.add_all(ArticleEntitySentimentTopic(**map_triplet(triplet), article_id=article_english.id) 
-            for triplet in triplets)
-        await db.commit()
-    
-    except Exception as e:
-        await db.rollback()
-        raise e
+        triplets = preprocessor.process_sentiment(article["sentiments"])
+        for triplet in triplets:
+            processed_triplet = await process_triplet(session, triplet)
+            if processed_triplet["entity_id"] is None or processed_triplet["sentiment_id"] is None:
+                continue
+            else:
+                x = ArticleEntitySentimentTopic(**processed_triplet, article_id=article_english.id)
+                session.add(x)
+        await session.commit()
 
         return {"status": "success", "apa_id": article["apa_id"]}
 
-    except Exception as e:
-        return {"status": "failed", "error": str(e)}
+async def process_triplet(session, triplet):
+        entity_apa_id, topic_apa_id, sentiment_apa_id = triplet
+        
+        entity = await session.execute(select(Entity).filter(Entity.apa_id == entity_apa_id))
+        topic = await session.execute(select(Topic).filter(Topic.apa_id == topic_apa_id))
+        sentiment = await session.execute(select(Sentiment).filter(Sentiment.apa_id == sentiment_apa_id))
+        
+        entity = entity.scalars().first()
+        topic = topic.scalars().first()
+        sentiment = sentiment.scalars().first()
+
+        return {
+            "entity_id": entity.id if entity else None,
+            "topic_id": topic.id if topic else None,
+            "sentiment_id": sentiment.id if sentiment else None
+        }

@@ -1,5 +1,6 @@
 import re
 from typing import Dict, List, Tuple
+from datetime import datetime
 
 class Preprocessor:
     def process_text(self, text: str) -> str:
@@ -28,3 +29,7 @@ class Preprocessor:
         text = self.process_text(text)
         triplets = tuple(map(lambda x: x.replace("EVAL_", "").split("_"), text.split(" ")))
         return triplets
+
+    def fix_date(self, date_string: str) -> str:
+        date_format = "%Y-%m-%d %H:%M:%S"
+        return datetime.strptime(date_string, date_format)

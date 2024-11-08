@@ -98,7 +98,7 @@ class ArticleEntitySentimentTopic(Base):
     article_id = Column(UUID(as_uuid=True), ForeignKey("articles.id"), nullable=False)
     entity_id = Column(UUID(as_uuid=True), ForeignKey("entities.id"), nullable=False)
     sentiment_id = Column(UUID(as_uuid=True), ForeignKey("sentiments.id"), nullable=False)
-    topic_id = Column(UUID(as_uuid=True), ForeignKey("topics.id"), nullable=False)
+    topic_id = Column(UUID(as_uuid=True), ForeignKey("topics.id"), nullable=True)
     model_id = Column(UUID(as_uuid=True), ForeignKey("models.id"), nullable=True)
 
     article = relationship("Article", back_populates="article_entity_sentiment_topics")
@@ -123,27 +123,3 @@ class Model(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     article_entity_sentiment_topics = relationship("ArticleEntitySentimentTopic", back_populates="model")
-
-class Job(Base):
-    __tablename__ = "jobs"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String, nullable=False)
-    description = Column(String, nullable=True)
-    type = Column(Enum("ETL", "TRAIN", "PREDICT", "NAMED_ENTITY_LINKING", name='job_types_enum'), nullable=False)
-    status = Column(Enum("PENDING", "RUNNING", "COMPLETED", "FAILED", name='job_status_enum'), nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-
-class Task(Base):
-    __tablename__ = "tasks"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
-    apa_id = Column(String, nullable=True)
-    status = Column(Enum("PENDING", "RUNNING", "COMPLETED", "FAILED", name='task_status_enum'), nullable=False)
-
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-
-    job = relationship("Job", back_populates="tasks")

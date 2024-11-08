@@ -5,8 +5,8 @@ from app.models import Article, Entity, EntityMention, Topic, Sentiment, Article
 
 
 class ArticleAdmin(ModelView, model=Article):
-    column_list = [Article.id, Article.apa_id, Article.title_english, Article.created_at, Article.updated_at]
-    column_searchable_list = [Article.title_english, Article.apa_id]
+    column_list = [Article.id, Article.apa_id, Article.title, Article.language, Article.article, Article.created_at, Article.updated_at]
+    column_searchable_list = [Article.title, Article.apa_id]
     name = "Article"
     name_plural = "Articles"
 
