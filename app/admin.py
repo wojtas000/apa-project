@@ -6,35 +6,35 @@ from app.models import Article, Entity, EntityMention, Topic, Sentiment, Article
 
 class ArticleAdmin(ModelView, model=Article):
     column_list = [Article.id, Article.apa_id, Article.title, Article.language, Article.article, Article.created_at, Article.updated_at]
-    column_searchable_list = [Article.title, Article.apa_id]
+    column_searchable_list = [Article.id, Article.title, Article.apa_id]
     name = "Article"
     name_plural = "Articles"
 
 
 class EntityAdmin(ModelView, model=Entity):
     column_list = [Entity.id, Entity.apa_id, Entity.name, Entity.source, Entity.type, Entity.created_at, Entity.updated_at]
-    column_searchable_list = [Entity.name, Entity.apa_id]
+    column_searchable_list = [Entity.id, Entity.name, Entity.apa_id]
     name = "Entity"
     name_plural = "Entities"
 
 
 class EntityMentionAdmin(ModelView, model=EntityMention):
     column_list = [EntityMention.id, EntityMention.entity_id, EntityMention.article_id, EntityMention.start_pos, EntityMention.end_pos, EntityMention.confidence, EntityMention.source, EntityMention.type, EntityMention.created_at, EntityMention.updated_at]
-    column_searchable_list = [EntityMention.source, EntityMention.type]
+    column_searchable_list = [EntityMention.id, EntityMention.source, EntityMention.type]
     name = "Entity Mention"
     name_plural = "Entity Mentions"
 
 
 class TopicAdmin(ModelView, model=Topic):
     column_list = [Topic.id, Topic.apa_id, Topic.name, Topic.type, Topic.created_at, Topic.updated_at]
-    column_searchable_list = [Topic.name, Topic.apa_id]
+    column_searchable_list = [Topic.id, Topic.name, Topic.apa_id]
     name = "Topic"
     name_plural = "Topics"
 
 
 class SentimentAdmin(ModelView, model=Sentiment):
     column_list = [Sentiment.id, Sentiment.apa_id, Sentiment.name, Sentiment.type, Sentiment.created_at, Sentiment.updated_at]
-    column_searchable_list = [Sentiment.name, Sentiment.apa_id]
+    column_searchable_list = [Sentiment.id, Sentiment.name, Sentiment.apa_id]
     name = "Sentiment"
     name_plural = "Sentiments"
 
@@ -48,7 +48,7 @@ class ArticleEntitySentimentTopicAdmin(ModelView, model=ArticleEntitySentimentTo
 
 class ModelAdmin(ModelView, model=Model):
     column_list = [Model.id, Model.name, Model.type, Model.created_at, Model.updated_at]
-    column_searchable_list = [Model.name]
+    column_searchable_list = [Model.id, Model.name]
     name = "Model"
     name_plural = "Models"
 
