@@ -16,10 +16,11 @@ class Article(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     apa_id = Column(String, nullable=False)
-    title_english = Column(String, nullable=True)
-    article_english = Column(Text, nullable=True)
-    title_german = Column(String, nullable=True)
-    article_german = Column(Text, nullable=True)
+    title= Column(String, nullable=True)
+    article = Column(Text, nullable=True)
+    language = Column(String(3), nullable=True)
+    published_date = Column(DateTime, nullable=True)
+
 
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -97,8 +98,8 @@ class ArticleEntitySentimentTopic(Base):
     article_id = Column(UUID(as_uuid=True), ForeignKey("articles.id"), nullable=False)
     entity_id = Column(UUID(as_uuid=True), ForeignKey("entities.id"), nullable=False)
     sentiment_id = Column(UUID(as_uuid=True), ForeignKey("sentiments.id"), nullable=False)
-    topic_id = Column(UUID(as_uuid=True), ForeignKey("topics.id"), nullable=False)
-    model_id = Column(UUID(as_uuid=True), ForeignKey("models.id"), nullable=False)
+    topic_id = Column(UUID(as_uuid=True), ForeignKey("topics.id"), nullable=True)
+    model_id = Column(UUID(as_uuid=True), ForeignKey("models.id"), nullable=True)
 
     article = relationship("Article", back_populates="article_entity_sentiment_topics")
     entity = relationship("Entity", back_populates="article_entity_sentiment_topics")

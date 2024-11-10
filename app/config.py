@@ -11,5 +11,7 @@ class Settings(BaseSettings):
     max_overflow: int = os.getenv("MAX_OVERFLOW", 0)
     embedding_size: int = os.getenv("EMBEDDING_SIZE", 384)
     embedding_model: str = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+    rq_timeout: int = os.getenv("RQ_TIMEOUT", 120)
 
 settings = Settings()
