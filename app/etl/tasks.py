@@ -1,62 +1,48 @@
 import asyncio
-
+from redis.utils import from_url
+from rq import Queue, Retry, get_current_job
+from rq.job import Job
+from typing import Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from celery.app import Celery
-from app.celery_app import celery_app
 from app.database import sessionmanager
 from app.models import Article, ArticleEntitySentimentTopic, Entity, Sentiment, Topic
 from app.config import settings
 from app.etl.preprocessor import Preprocessor
 from app.etl.translator import Translator
-
+from app.utils.decorators import timeit
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 translator = Translator(from_code='de', to_code='en') 
 preprocessor = Preprocessor()
-
-@celery_app.task
-def process_article_task(article: dict):
-    asyncio.run(_process_article_task_async(article))
+queue = Queue('load-xml', connection=from_url(settings.redis_url), default_timeout=settings.rq_timeout)
 
 
-async def _process_article_task_async(article: dict):
+def enqueue_article_load(article: Dict):
+    return queue.enqueue_call(
+        func=task,
+        args=(article,),
+        result_ttl=2000,
+        retry=Retry(max=1)
+    )
+
+@timeit
+async def task(article: dict):
     async with sessionmanager.session() as session:
-        text = preprocessor.process_text(article["article"])
-        title = preprocessor.process_text(article["title"])
-        sentiments = preprocessor.process_sentiment(article["sentiments"])
-        date = preprocessor.fix_date(article["published_date"])
-        article_english = Article(
-            apa_id=article["apa_id"],
-            published_date=date,
-            title=preprocessor.fix_punctuation(translator.translate(title)),
-            article=preprocessor.fix_punctuation(translator.translate(text)),
-            language="ENG"
-        )
-        article_german = Article(
-            apa_id=article["apa_id"],
-            published_date=date,
-            title=title,
-            article=text,
-            language="GER"
-        )
-    
-        session.add(article_english)
-        session.add(article_german)
-        await session.commit()
-        await session.refresh(article_english)
+        async with session.begin():
+            article_english_id = await create_article(session, article)
 
-        triplets = preprocessor.process_sentiment(article["sentiments"])
-        for triplet in triplets:
-            processed_triplet = await process_triplet(session, triplet)
-            if processed_triplet["entity_id"] is None or processed_triplet["sentiment_id"] is None:
-                continue
-            else:
-                x = ArticleEntitySentimentTopic(**processed_triplet, article_id=article_english.id)
-                session.add(x)
-        await session.commit()
+            triplets = preprocessor.process_sentiment(article["sentiments"])
+            for triplet in triplets:
+                processed_triplet = await process_triplet(session, triplet)
+                if processed_triplet["entity_id"] and processed_triplet["sentiment_id"]:
+                    article_entity_sentiment_topic = ArticleEntitySentimentTopic(**processed_triplet, article_id=article_english_id)
+                    session.add(article_entity_sentiment_topic)
 
-        return {"status": "success", "apa_id": article["apa_id"]}
+            return {"status": "success", "apa_id": article["apa_id"]}
 
+@timeit
 async def process_triplet(session, triplet):
         entity_apa_id, topic_apa_id, sentiment_apa_id = triplet
         
@@ -73,3 +59,28 @@ async def process_triplet(session, triplet):
             "topic_id": topic.id if topic else None,
             "sentiment_id": sentiment.id if sentiment else None
         }
+
+@timeit
+async def create_article(session, article):
+    text = preprocessor.process_text(article["article"])
+    title = preprocessor.process_text(article["title"])
+    date = preprocessor.fix_date(article["published_date"])
+    article_english = Article(
+        apa_id=article["apa_id"],
+        published_date=date,
+        title=preprocessor.fix_punctuation(translator.translate(title)),
+        article=preprocessor.fix_punctuation(translator.translate(text)),
+        language="ENG"
+    )
+    article_german = Article(
+        apa_id=article["apa_id"],
+        published_date=date,
+        title=title,
+        article=text,
+        language="GER"
+    )
+
+    session.add(article_english)
+    session.add(article_german)
+    await session.flush()
+    return article_english.id

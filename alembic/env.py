@@ -1,5 +1,6 @@
 import asyncio
 import os
+from dotenv import load_dotenv
 from logging.config import fileConfig
 
 from alembic import context

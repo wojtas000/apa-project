@@ -5,7 +5,8 @@ uvicorn --reload --port 8000 app.main:app
 
 # Start celery worker
 ```
-PYTHONPATH=./app celery -A app.celery_app.celery_app worker --loglevel=info
+celery -A app.celery_app.celery_app worker --loglevel=info --concurrency=4
+
 ```
 
 # Start flower for background task monitoring

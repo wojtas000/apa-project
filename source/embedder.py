@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 class Embedder:
     def __init__(self, model_name: str = settings.embedding_model):
+
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModel.from_pretrained(model_name)
 

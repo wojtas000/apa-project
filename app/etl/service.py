@@ -13,14 +13,16 @@ def generate_articles(data) -> Generator[Dict[str, str], None, None]:
         title = document.find(".//FELD[@NAME='TITEL']")
         article = document.find(".//FELD[@NAME='INHALT']")
         sentiments = document.find(".//FELD[@NAME='EVALUATIONS']")
-
-        yield {
-            "apa_id": doc_id,
-            "published_date": published_date,
-            "title": ET.tostring(title, encoding='unicode', method='text'),
-            "article": ET.tostring(article, encoding='unicode', method='text'),
-            "sentiments": ET.tostring(sentiments, encoding='unicode', method='text'),
-        }
+        try:
+            yield {
+                "apa_id": doc_id,
+                "published_date": published_date,
+                "title": ET.tostring(title, encoding='unicode', method='text'),
+                "article": ET.tostring(article, encoding='unicode', method='text'),
+                "sentiments": ET.tostring(sentiments, encoding='unicode', method='text'),
+            }
+        except:
+            continue
 
 def process_article(
     article: Dict,

@@ -94,7 +94,7 @@ async def import_xml_articles(
 
     article_generator = generate_articles(await file.read())
     for article in article_generator:
-        task = tasks.process_article_task.delay(article)
+        task = tasks.enqueue_article_load(article)
         
     return {
         "job_id": job_id,

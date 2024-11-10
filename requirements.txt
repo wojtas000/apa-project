@@ -12,6 +12,8 @@ pydantic==2.9.2
 pydantic_settings==2.6.0
 python-dotenv==1.0.1
 redis==5.2.0
+rq==1.16.2
+rq_dashboard_fast==0.5.9
 sqladmin==0.20.0
 SQLAlchemy==2.0.30
 torch==2.5.1
