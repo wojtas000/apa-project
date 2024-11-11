@@ -1,6 +1,7 @@
 /venv
 .env
 test.ipynb
+/backups
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

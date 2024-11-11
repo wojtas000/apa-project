@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Column, Integer, Enum, DateTime, ForeignKey, func
+from sqlalchemy import Column, String, Integer, Enum, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
@@ -14,6 +14,7 @@ class EntityMention(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     entity_id = Column(UUID(as_uuid=True), ForeignKey("entities.id"), nullable=False)
     article_id = Column(UUID(as_uuid=True), ForeignKey("articles.id"), nullable=False)
+    name = Column(String, nullable=False)
     start_pos = Column(Integer, nullable=False)
     end_pos = Column(Integer, nullable=False)
     confidence = Column(Integer, nullable=True)
