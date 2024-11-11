@@ -1,6 +1,5 @@
 import argostranslate.package
 import argostranslate.translate
-import pandas as pd
 
 class Translator:
     def __init__(self, from_code='de', to_code='en'):

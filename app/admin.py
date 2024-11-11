@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from sqladmin import Admin, ModelView
-from app.database import sessionmanager
+
+from app.core.database import sessionmanager
 from app.models import Article, Entity, EntityMention, Topic, Sentiment, ArticleEntitySentimentTopic, Model
 
 
@@ -62,4 +63,3 @@ def init_admin(app: FastAPI):
     admin.add_view(SentimentAdmin)
     admin.add_view(ArticleEntitySentimentTopicAdmin)
     admin.add_view(ModelAdmin)
-
