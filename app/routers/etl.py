@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.auth import api_key_auth
+from app.core.dependencies import get_ner_model
 from app.models import Entity, Topic, Sentiment, Article
-from app.schemas import EntityCreate, TopicCreate, SentimentCreate
+from app.schemas import EntityCreate, TopicCreate, SentimentCreate, EntityMentionsDetect
 from app.jobs.load_article_job import enqueue_load_article 
 from app.services import Embedder, Preprocessor, Translator, ArticleGenerator
 
@@ -98,6 +99,15 @@ async def import_xml_articles(
         "job_id": job_id,
         "message": "File processing started in background"
         }
+
+@router.post(
+    "/detect_entity_mentions",
+    dependencies=[Depends(api_key_auth)],
+    response_model_exclude_none=True
+)
+async def detect_entity_mentions(data: EntityMentionsDetect, ner_model = Depends(get_ner_model), db: AsyncSession = Depends(get_db)):
+    predictions = ner_model.get_named_entities(data.text)
+    return {"predictions": predictions}
 
 # @router.post("/articles")
 # async def create_article(article: Article, db: AsyncSession = Depends(get_db), response_model_exclude_none=True):
