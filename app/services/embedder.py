@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 
 from transformers import AutoTokenizer, AutoModel
-
+from typing import List
 from app.core.config import settings
 
 
@@ -13,10 +13,10 @@ class Embedder:
         self.model = AutoModel.from_pretrained(model_name)
 
 
-    def get_embedding(self, text: str) -> torch.Tensor:
+    def get_embedding(self, text: str) -> List[float]:
         inputs = self.tokenizer(text, return_tensors="pt", truncation=True, padding=True)
         with torch.no_grad():
             outputs = self.model(**inputs)
         
         embeddings = outputs.last_hidden_state.mean(dim=1)
-        return list(embeddings.squeeze())
+        return embeddings.squeeze().tolist()
