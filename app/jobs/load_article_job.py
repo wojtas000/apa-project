@@ -1,17 +1,19 @@
 import asyncio
+import warnings
+
 from redis.utils import from_url
 from rq import Queue, Retry, get_current_job
 from rq.job import Job
 from typing import Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from app.database import sessionmanager
+
+from app.core.database import sessionmanager
+from app.core.config import settings
 from app.models import Article, ArticleEntitySentimentTopic, Entity, Sentiment, Topic
-from app.config import settings
-from app.etl.preprocessor import Preprocessor
-from app.etl.translator import Translator
+from app.services  import Preprocessor, Translator
 from app.utils.decorators import timeit
-import warnings
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 translator = Translator(from_code='de', to_code='en') 
@@ -19,16 +21,15 @@ preprocessor = Preprocessor()
 queue = Queue('load-xml', connection=from_url(settings.redis_url), default_timeout=settings.rq_timeout)
 
 
-def enqueue_article_load(article: Dict):
+def enqueue_load_article(article: Dict):
     return queue.enqueue_call(
-        func=task,
+        func=load_article,
         args=(article,),
         result_ttl=2000,
         retry=Retry(max=1)
     )
 
-@timeit
-async def task(article: dict):
+async def load_article(article: dict):
     async with sessionmanager.session() as session:
         async with session.begin():
             article_english_id = await create_article(session, article)
@@ -42,7 +43,6 @@ async def task(article: dict):
 
             return {"status": "success", "apa_id": article["apa_id"]}
 
-@timeit
 async def process_triplet(session, triplet):
         entity_apa_id, topic_apa_id, sentiment_apa_id = triplet
         
@@ -60,7 +60,6 @@ async def process_triplet(session, triplet):
             "sentiment_id": sentiment.id if sentiment else None
         }
 
-@timeit
 async def create_article(session, article):
     text = preprocessor.process_text(article["article"])
     title = preprocessor.process_text(article["title"])

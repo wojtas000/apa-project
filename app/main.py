@@ -1,15 +1,16 @@
 import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from contextlib import asynccontextmanager
 from rq_dashboard_fast import RedisQueueDashboard
-from app.config import settings
-from app.database import sessionmanager
-from app.etl.router import router as etl_router
-from app.inference.router import router as inference_router
+
+from app.core.config import settings
+from app.core.database import sessionmanager
+from app.routers import etl_router, inference_router, training_router
 from app.admin import init_admin
-from source.processors import Translator
+from app.services import Translator
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -40,6 +41,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
 app.include_router(etl_router)
 app.include_router(inference_router)
+app.include_router(training_router)

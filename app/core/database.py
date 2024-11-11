@@ -1,14 +1,14 @@
 import contextlib
 from typing import Any, AsyncIterator
 
-from app.config import settings
+from app.core.config import settings
 from sqlalchemy.ext.asyncio import (
     AsyncConnection,
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 

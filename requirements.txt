@@ -3,6 +3,7 @@ argostranslate
 asyncpg==0.29.0
 celery==5.4.0
 fastapi==0.115.2
+fastapi[standard]
 flower==2.0.1
 gunicorn==23.0.0
 pandas==2.2.3
@@ -18,4 +19,5 @@ sqladmin==0.20.0
 SQLAlchemy==2.0.30
 torch==2.5.1
 transformers==4.46.1
+uv==0.5.1
 uvicorn==0.32.0

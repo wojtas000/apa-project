@@ -4,8 +4,7 @@ from dotenv import load_dotenv
 from logging.config import fileConfig
 
 from alembic import context
-from app.models import Base
-from app.database import fix_url
+from app.core.database import Base, fix_url
 from asyncpg import Connection
 from sqlalchemy import pool
 from sqlalchemy import engine_from_config
