@@ -2,6 +2,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import get_db
@@ -107,7 +108,29 @@ async def import_xml_articles(
 )
 async def detect_entity_mentions(data: EntityMentionsDetect, ner_model = Depends(get_ner_model), db: AsyncSession = Depends(get_db)):
     predictions = ner_model.get_named_entities(data.text)
-    return {"predictions": predictions}
+    embeddings = [embedder.get_embedding(prediction["name"]) for prediction in predictions] 
+
+    preds = []
+
+    for embedding in embeddings:
+        embedding_vector = query_embedding_str = ",".join(map(str, embedding))
+        
+        query = text("""
+            SELECT id, name, 1 - (vector <-> :embedding) AS similarity
+            FROM entities
+            ORDER BY vector <-> :embedding
+            LIMIT 1
+        """)
+        result = await db.execute(query, {"embedding": embedding_vector})
+        most_similar_entity = result.fetchone()
+
+        preds.append({
+            "entity_id": most_similar_entity.id,
+            "name": most_similar_entity.name,
+            "similarity": most_similar_entity.similarity
+        })
+
+    return {"predictions": preds}
 
 # @router.post("/articles")
 # async def create_article(article: Article, db: AsyncSession = Depends(get_db), response_model_exclude_none=True):
