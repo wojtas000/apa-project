@@ -113,12 +113,12 @@ async def detect_entity_mentions(data: EntityMentionsDetect, ner_model = Depends
     preds = []
 
     for embedding in embeddings:
-        
         query = text("""
-            SELECT id, name, 1 - (vector <-> :embedding) AS similarity
+            SELECT id, name, 1 - (vector <=> :embedding) AS similarity
             FROM entities
-            ORDER BY vector <-> :embedding
+            ORDER BY vector <=> :embedding
             LIMIT 1
+
         """)
         result = await db.execute(query, {"embedding": str(embedding)})
         most_similar_entity = result.fetchone()
