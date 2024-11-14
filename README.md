@@ -15,3 +15,13 @@ python -m scripts.start_worker
 ```
 5. Background task monitoring at `localhost:8000/rq/`
 6. Admin panel at `localhost:8000/admin/`
+7. Database backup:
+```
+docker exec -t <container_id_or_name> pg_dump -U <username> <database_name> > backup.sql
+
+```
+8. Database migrations:
+```
+alembic revision --autogenerate -m "your_migration_message"
+alembic upgrade head
+```

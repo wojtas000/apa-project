@@ -13,5 +13,7 @@ class Settings(BaseSettings):
     embedding_model: str = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
     redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379")
     rq_timeout: int = os.getenv("RQ_TIMEOUT", 120)
+    flair_cache_root: str = os.getenv("FLAIR_CACHE_ROOT")
+    entity_similarity_threshold: float = os.getenv("ENTITY_SIMILARITY_THRESHOLD", 0.7)
 
 settings = Settings()
