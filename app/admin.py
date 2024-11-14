@@ -20,7 +20,7 @@ class EntityAdmin(ModelView, model=Entity):
 
 
 class EntityMentionAdmin(ModelView, model=EntityMention):
-    column_list = [EntityMention.id, EntityMention.entity_id, EntityMention.article_id, EntityMention.start_pos, EntityMention.end_pos, EntityMention.confidence, EntityMention.source, EntityMention.type, EntityMention.created_at, EntityMention.updated_at]
+    column_list = [EntityMention.id, EntityMention.entity_id, EntityMention.article_id, EntityMention.name, EntityMention.start_pos, EntityMention.end_pos, EntityMention.confidence, EntityMention.source, EntityMention.type, EntityMention.similarity, EntityMention.created_at, EntityMention.updated_at]
     column_searchable_list = [EntityMention.id, EntityMention.source, EntityMention.type]
     name = "Entity Mention"
     name_plural = "Entity Mentions"

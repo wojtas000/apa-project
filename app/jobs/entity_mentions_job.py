@@ -7,76 +7,95 @@ from rq.job import Job
 from typing import Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-
+from sqlalchemy.sql import text
 from app.core.database import sessionmanager
 from app.core.config import settings
-from app.models import Entity, EntityMention
-from app.utils.decorators import timeit
+from app.models import Entity, EntityMention, Article
+from app.services import Embedder, NamedEntityLinker, NERModel
+
+from flair.models import SequenceTagger
+import ast
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+
+ner_model = None
+
+def get_or_initialize_ner_model():
+    global ner_model
+    if ner_model is None:
+        ner_model = NERModel(tagger=SequenceTagger.load("flair/ner-english"))
+    return ner_model
+
 
 queue = Queue('entity-mentions', connection=from_url(settings.redis_url), default_timeout=settings.rq_timeout)
 
 
-def enqueue_entity_mentions(article: Dict):
+def enqueue_entity_mentions(article_id: str):
     return queue.enqueue_call(
-        func=load_article,
-        args=(article,),
+        func=detect_entity_mentions,
+        args=(article_id,),
         result_ttl=2000,
         retry=Retry(max=1)
     )
 
-async def load_article(article: dict):
+async def detect_entity_mentions(article_id: str):
+    named_entity_linker = NamedEntityLinker()
+    embedder = Embedder()
+    ner_model = get_or_initialize_ner_model()
+    
     async with sessionmanager.session() as session:
         async with session.begin():
-            article_english_id = await create_article(session, article)
+            article = await session.get(Article, article_id)
+            detected_entities = ner_model.get_named_entities(article.article)
 
-            triplets = preprocessor.process_sentiment(article["sentiments"])
-            for triplet in triplets:
-                processed_triplet = await process_triplet(session, triplet)
-                if processed_triplet["entity_id"] and processed_triplet["sentiment_id"]:
-                    article_entity_sentiment_topic = ArticleEntitySentimentTopic(**processed_triplet, article_id=article_english_id)
-                    session.add(article_entity_sentiment_topic)
+            entities = await get_entities(session, article_id)
+            entity_names = [entity.name for entity in entities]
+            matrix = [ast.literal_eval(entity.vector) for entity in entities]
 
-            return {"status": "success", "apa_id": article["apa_id"]}
+            for detected_entity in detected_entities:
+                embedding = embedder.get_embedding(detected_entity['name'])
+                similarity, entity_idx = named_entity_linker.get_most_similar_entity(
+                    vector=embedding,
+                    matrix=matrix, 
+                    name=detected_entity['name'], 
+                    entity_names=entity_names
+                )
+                if similarity > settings.entity_similarity_threshold:
+                    entity_mention = await create_entity_mention(
+                        session, 
+                        entities[entity_idx].id, 
+                        article_id, detected_entity, 
+                        embedding, 
+                        similarity
+                    )
+            
+            session.commit()
+    return {"article_id": article_id}
 
-async def process_triplet(session, triplet):
-        entity_apa_id, topic_apa_id, sentiment_apa_id = triplet
-        
-        entity = await session.execute(select(Entity).filter(Entity.apa_id == entity_apa_id))
-        topic = await session.execute(select(Topic).filter(Topic.apa_id == topic_apa_id))
-        sentiment = await session.execute(select(Sentiment).filter(Sentiment.apa_id == sentiment_apa_id))
-        
-        entity = entity.scalars().first()
-        topic = topic.scalars().first()
-        sentiment = sentiment.scalars().first()
-
-        return {
-            "entity_id": entity.id if entity else None,
-            "topic_id": topic.id if topic else None,
-            "sentiment_id": sentiment.id if sentiment else None
-        }
-
-async def create_article(session, article):
-    text = preprocessor.process_text(article["article"])
-    title = preprocessor.process_text(article["title"])
-    date = preprocessor.fix_date(article["published_date"])
-    article_english = Article(
-        apa_id=article["apa_id"],
-        published_date=date,
-        title=preprocessor.fix_punctuation(translator.translate(title)),
-        article=preprocessor.fix_punctuation(translator.translate(text)),
-        language="ENG"
+async def get_entities(session, article_id: str):
+    query = text("""
+        SELECT entities.id, entities.name, entities.vector
+        FROM entities
+        JOIN article_entity_sentiment_topics ON article_entity_sentiment_topics.entity_id = entities.id
+        WHERE article_entity_sentiment_topics.article_id = :article_id
+        """
     )
-    article_german = Article(
-        apa_id=article["apa_id"],
-        published_date=date,
-        title=title,
-        article=text,
-        language="GER"
-    )
+    result = await session.execute(query, {"article_id": article_id})
+    entities = result.fetchall()
+    return entities
 
-    session.add(article_english)
-    session.add(article_german)
-    await session.flush()
-    return article_english.id
+async def create_entity_mention(session, entity_id, article_id, detected_entity, embedding, similarity):
+    entity_mention = EntityMention(
+        article_id=article_id,
+        entity_id=entity_id,
+        name=detected_entity["name"],
+        start_pos=detected_entity["start_pos"],
+        end_pos=detected_entity["end_pos"],
+        confidence=detected_entity["confidence"],
+        type=detected_entity["type"],
+        source="NER",
+        vector=embedding,
+        similarity=similarity
+    )
+    session.add(entity_mention)
+    return entity_mention

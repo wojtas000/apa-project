@@ -1,4 +1,6 @@
 import uuid
+import logging
+import ast
 
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,9 +10,10 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.auth import api_key_auth
 from app.core.dependencies import get_ner_model
-from app.models import Entity, Topic, Sentiment, Article
+from app.models import Entity, Topic, Sentiment, Article, EntityMention
 from app.schemas import EntityCreate, TopicCreate, SentimentCreate, EntityMentionsDetect
-from app.jobs.load_article_job import enqueue_load_article 
+from app.jobs.load_article_job import enqueue_load_article
+from app.jobs.entity_mentions_job import enqueue_entity_mentions 
 from app.services import Embedder, Preprocessor, Translator, ArticleGenerator
 
 
@@ -102,43 +105,65 @@ async def import_xml_articles(
         }
 
 @router.post(
-    "/detect_entity_mentions",
+    "/article/{article_id}/entity_mentions",
     dependencies=[Depends(api_key_auth)],
     response_model_exclude_none=True
 )
-async def detect_entity_mentions(data: EntityMentionsDetect, ner_model = Depends(get_ner_model), db: AsyncSession = Depends(get_db)):
-    predictions = ner_model.get_named_entities(data.text)
-    embeddings = [embedder.get_embedding(prediction["name"]) for prediction in predictions] 
+async def detect_entity_mentions(
+    article_id: uuid.UUID, 
+    # ner_model = Depends(get_ner_model), 
+    db: AsyncSession = Depends(get_db)
+):
+    enqueue_entity_mentions(article_id)
+    return {"message": "Entity mentions detection started in background", "article_id": article_id}
 
-    preds = []
+@router.get(
+    "/article/{article_id}",
+    dependencies=[Depends(api_key_auth)],
+    response_model_exclude_none=True
+)
+async def get_entity_mentions(article_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    article = await db.get(Article, article_id)
+    return {"article": article}
 
-    for embedding in embeddings:
-        query = text("""
-            SELECT id, name, 1 - (vector <=> :embedding) AS similarity
-            FROM entities
-            ORDER BY vector <=> :embedding
-            LIMIT 1
+@router.get(
+    "/entity/{entity_id}",
+    dependencies=[Depends(api_key_auth)],
+    response_model_exclude_none=True
+)
+async def get_entity_mentions(entity_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    entity = await db.get(Entity, entity_id)
+    return {"entity": entity.name}
 
-        """)
-        result = await db.execute(query, {"embedding": str(embedding)})
-        most_similar_entity = result.fetchone()
+@router.get(
+    "/article/{article_id}/triplets",
+    dependencies=[Depends(api_key_auth)],
+    response_model_exclude_none=True
+)
+async def get_article_triplets(
+    article_id: uuid.UUID, 
+    db: AsyncSession = Depends(get_db)
+):
+    query = text(
+        """
+        SELECT entities.name AS entity_name, sentiments.name AS sentiment_name, topics.name AS topic_name
+        FROM article_entity_sentiment_topics
+        JOIN entities ON article_entity_sentiment_topics.entity_id = entities.id
+        JOIN sentiments ON article_entity_sentiment_topics.sentiment_id = sentiments.id
+        LEFT JOIN topics ON article_entity_sentiment_topics.topic_id = topics.id
+        WHERE article_entity_sentiment_topics.article_id = :article_id
+        """
+    )
 
-        preds.append({
-            "entity_id": most_similar_entity.id,
-            "name": most_similar_entity.name,
-            "similarity": most_similar_entity.similarity
-        })
+    # Fetch all results
+    rows = await db.execute(query, {"article_id": article_id})
 
-    return {"predictions": preds}
+    # Format the results as a list of dictionaries
+    article_entity_sentiment_topics = [
+        {"entity": row.entity_name, "sentiment": row.sentiment_name, "topic": row.topic_name}
+        for row in rows
+    ]
 
-# @router.post("/articles")
-# async def create_article(article: Article, db: AsyncSession = Depends(get_db), response_model_exclude_none=True):
-#     try:
-#         db_article = ArticleModel(**article.dict())
-#         db.add(db_article)
-#         db.commit()
-#         db.refresh(db_article)
-#         return db_article
-#     except SQLAlchemyError as e:
-#         db.rollback()
-#         raise HTTPException(status_code=400, detail=str(e))
+    return {"article_entity_sentiment_topics": article_entity_sentiment_topics}
+
+    

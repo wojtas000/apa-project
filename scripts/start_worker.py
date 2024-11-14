@@ -22,7 +22,7 @@ def run_rq_worker():
     rq_pool_size = os.getenv('RQ_POOL_SIZE', '5')
     print(f"RQ_POOL_SIZE: {rq_pool_size}")
 
-    queues = os.getenv('QUEUES', 'load-xml')
+    queues = ['load-xml', 'entity-mentions']
     print(f"QUEUES: {queues}")
 
     command = [
@@ -30,7 +30,7 @@ def run_rq_worker():
         "-n", rq_pool_size,
         "-u", os.getenv('REDIS_URL'),
         "-w", "app.worker.AppWorker",
-        queues
+        *queues
     ]
     subprocess.run(command, check=True)
 
