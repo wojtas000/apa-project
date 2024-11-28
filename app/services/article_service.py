@@ -61,7 +61,7 @@ class ArticleService:
             mentions_by_entity[row.entity_id].append({
                 "entity_name": row.entity_name,
                 "mention": row.name,
-                "sentiment": row.sentiment_name
+                "sentiment": row.sentiment_name.capitalize()
             })
         article_text = row.article_text
 
