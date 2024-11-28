@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.auth import api_key_auth
 from app.repositories import ArticleRepository
 from app.jobs.entity_mentions_job import enqueue_entity_mentions
-from app.services import TrainingDataService
+from app.services import ArticleService
 
 router = APIRouter(prefix="/article", tags=["article"])
 
@@ -70,4 +70,4 @@ dependencies=[Depends(api_key_auth)],
 response_model_exclude_none=True
 )
 async def get_training_data(article_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    return await TrainingDataService(db=db).get_training_data(article_id)
+    return await ArticleService(db=db).get_training_data(article_id)
