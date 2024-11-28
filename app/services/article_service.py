@@ -3,7 +3,6 @@ import re
 from sqlalchemy.ext.asyncio import AsyncSession
 from collections import defaultdict
 from typing import List
-from functools import reduce
 
 from app.repositories import ArticleRepository
 
@@ -51,7 +50,7 @@ class ArticleService:
         }
 
 
-    async def get_training_data(self, article_id: str):
+    async def get_training_data(self, article_id: str, with_ambivalent: bool = False) -> dict:
         rows = await self.repository.get_training_data(article_id)
         if not rows:
             return {"training_data": []}

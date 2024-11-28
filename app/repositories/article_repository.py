@@ -35,7 +35,7 @@ class ArticleRepository(BaseRepository):
         rows = await self.db.execute(query, {"article_id": id})
         return rows.all()
 
-    async def get_training_data(self, id: str):
+    async def get_training_data(self, id: str, with_ambivalent: bool = False):
         query = text(
         """
         SELECT 
@@ -58,10 +58,14 @@ class ArticleRepository(BaseRepository):
         WHERE 
             em.article_id = :article_id AND aes.topic_id IS NULL
         """
-    )
+        )
+
+        if not with_ambivalent:
+            query = query + " AND s.name != 'ambivalent'"
 
         rows = await self.db.execute(query, {"article_id": id})
         return rows.all()
+
 
 
     async def get_train_test_dev_split(self, seed=42):

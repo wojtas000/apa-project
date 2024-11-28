@@ -1,18 +1,14 @@
-import asyncio
 import warnings
 
 from redis.utils import from_url
-from rq import Queue, Retry, get_current_job
-from rq.job import Job
+from rq import Queue, Retry
 from typing import Dict
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.database import sessionmanager
 from app.core.config import settings
 from app.models import Article, ArticleEntitySentimentTopic, Entity, Sentiment, Topic
 from app.services  import Preprocessor, Translator
-from app.utils.decorators import timeit
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 

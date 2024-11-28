@@ -1,9 +1,6 @@
 import uuid
-import os
 
 from pathlib import Path
-from collections import defaultdict
-from functools import reduce
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +19,7 @@ router = APIRouter(prefix="/article", tags=["article"])
     dependencies=[Depends(api_key_auth)],
     response_model_exclude_none=True
 )
-async def get_train_test_dev_split(db: AsyncSession = Depends(get_db), dataset_name: str = 'dataset'):
+async def get_train_test_dev_split(db: AsyncSession = Depends(get_db), dataset_name: str = 'dataset', with_ambivalent: bool = False):
     app_root = Path(__file__).resolve().parent
     dataset_path = app_root / "datasets" / dataset_name 
 
@@ -39,13 +36,10 @@ async def get_train_test_dev_split(db: AsyncSession = Depends(get_db), dataset_n
          open(test_file_path, "w") as test_file, \
          open(dev_file_path, "w") as dev_file:
 
-        # Process the train, test, and dev sets
         for dataset, file in zip([train, test, dev], [train_file, test_file, dev_file]):
             for row in dataset:
-                # Get the training data for the article
-                training_data = await ArticleService(db).get_training_data(row.id)
+                training_data = await ArticleService(db).get_training_data(row.id, with_ambivalent=with_ambivalent)
                 
-                # Write each training data entry to the respective file
                 for data_row in training_data['training_data']:
                     file.write(f"{data_row['text']}\n")
                     file.write(f"{data_row['entity_name']}\n")

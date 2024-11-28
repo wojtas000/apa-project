@@ -8,10 +8,9 @@ from rq_dashboard_fast import RedisQueueDashboard
 from flair.models import SequenceTagger
 
 from app.core.config import settings
-from app.core.database import sessionmanager
 from app.routers import *
 from app.admin import init_admin
-from app.services import Translator, NERModel
+from app.services import Translator
 
 logging.basicConfig(level=logging.DEBUG)
 

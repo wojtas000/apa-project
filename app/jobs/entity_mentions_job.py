@@ -1,20 +1,15 @@
-import asyncio
 import warnings
 import ast
 
 from redis.utils import from_url
-from rq import Queue, Retry, get_current_job
-from rq.job import Job
-from typing import Dict
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
+from rq import Queue, Retry
 from sqlalchemy.sql import text
 
 from app.core.database import sessionmanager
 from app.core.config import settings
 from app.core.dependencies import get_ner_model, get_embedder
-from app.models import Entity, EntityMention, Article
-from app.services import Embedder, NamedEntityLinker, NERModel
+from app.models import EntityMention, Article
+from app.services import NamedEntityLinker
 
 
 warnings.filterwarnings("ignore", category=FutureWarning)

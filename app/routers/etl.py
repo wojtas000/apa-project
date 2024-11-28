@@ -1,19 +1,15 @@
 import uuid
-import logging
-import ast
 
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.database import get_db
 from app.core.auth import api_key_auth
-from app.core.dependencies import get_ner_model, get_embedder
-from app.models import Entity, Topic, Sentiment, Article, EntityMention
-from app.schemas import EntityCreate, TopicCreate, SentimentCreate, EntityMentionsDetect
+from app.core.dependencies import get_embedder
+from app.models import Entity, Topic, Sentiment
+from app.schemas import EntityCreate, TopicCreate, SentimentCreate
 from app.jobs.load_article_job import enqueue_load_article
-from app.jobs.entity_mentions_job import enqueue_entity_mentions 
-from app.services import Embedder, Preprocessor, Translator, ArticleGenerator
+from app.services import Embedder, ArticleGenerator
 
 
 router = APIRouter(prefix="/etl", tags=["etl"])

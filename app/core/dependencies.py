@@ -1,4 +1,3 @@
-from fastapi import Request, Depends
 from app.services import Embedder, NERModel
 from app import models
 

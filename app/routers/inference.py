@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter
 
 
 router = APIRouter(prefix="/inference", tags=["inference"])

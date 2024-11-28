@@ -1,5 +1,4 @@
 from flair.data import Sentence
-from flair.models import SequenceTagger
 
 class NERModel:
     def __init__(self, tagger):
