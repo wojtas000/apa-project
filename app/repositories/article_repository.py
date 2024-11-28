@@ -36,8 +36,7 @@ class ArticleRepository(BaseRepository):
         return rows.all()
 
     async def get_training_data(self, id: str, with_ambivalent: bool = False):
-        query = text(
-        """
+        query ="""
         SELECT 
             em.*, 
             s.name AS sentiment_name, 
@@ -58,12 +57,11 @@ class ArticleRepository(BaseRepository):
         WHERE 
             em.article_id = :article_id AND aes.topic_id IS NULL
         """
-        )
 
         if not with_ambivalent:
             query = query + " AND s.name != 'ambivalent'"
 
-        rows = await self.db.execute(query, {"article_id": id})
+        rows = await self.db.execute(text(query), {"article_id": id})
         return rows.all()
 
 
