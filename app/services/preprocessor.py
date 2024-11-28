@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from datetime import datetime
 
 class Preprocessor:

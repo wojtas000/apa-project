@@ -8,20 +8,19 @@ from rq_dashboard_fast import RedisQueueDashboard
 from flair.models import SequenceTagger
 
 from app.core.config import settings
-from app.core.database import sessionmanager
-from app.routers import etl_router, inference_router, training_router
+from app.routers import *
 from app.admin import init_admin
-from app.services import Translator, NERModel
+from app.services import Translator
 
 logging.basicConfig(level=logging.DEBUG)
+
+models = {}
+models["ner"] = SequenceTagger.load("flair/ner-english")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Translator.install_package(from_code='de', to_code='en')
-    app.state.models = {}
-    app.state.models["ner"] = NERModel(tagger=SequenceTagger.load("flair/ner-english")) 
     yield
-    # del app.state.models["ner"]
 
 app = FastAPI(lifespan=lifespan)
 init_admin(app)
@@ -45,6 +44,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(article_router)
 app.include_router(etl_router)
 app.include_router(inference_router)
 app.include_router(training_router)

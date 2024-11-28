@@ -4,6 +4,7 @@ from .translator import Translator
 from .article_generator import ArticleGenerator
 from .ner_model import NERModel
 from .named_entity_linker import NamedEntityLinker
+from .article_service import ArticleService
 
 __all__ = [
     "Embedder", 
@@ -11,5 +12,6 @@ __all__ = [
     "Translator", 
     "ArticleGenerator",
     "NERModel",
-    "NamedEntityLinker"
+    "NamedEntityLinker",
+    "ArticleService"
 ]
