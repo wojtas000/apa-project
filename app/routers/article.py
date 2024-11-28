@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.auth import api_key_auth
 from app.repositories import ArticleRepository
 from app.jobs.entity_mentions_job import enqueue_entity_mentions
-
+from app.services import TrainingDataService
 
 router = APIRouter(prefix="/article", tags=["article"])
 
@@ -70,25 +70,4 @@ dependencies=[Depends(api_key_auth)],
 response_model_exclude_none=True
 )
 async def get_training_data(article_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    article_repo = ArticleRepository(db)
-    rows = await article_repo.get_training_data(article_id)
-    if not rows:
-        return {"training_data": []}
-    mentions_by_entity = defaultdict(list)
-    for row in rows:
-        mentions_by_entity[row.entity_id].append({
-            "entity_name": row.entity_name,
-            "mention": row.name,
-            "sentiment": row.sentiment_name
-        })
-    article_text = row.article_text
-
-    entity_mentions = []
-    for entity_name, mentions in mentions_by_entity.items():
-        entity_mentions.append({
-            "entity_name": mentions[0]["entity_name"],
-            "sentiment": mentions[0]["sentiment"],
-            "text": reduce(lambda text, mention: text.replace(mention["mention"], "$T$"), mentions, article_text)
-        })
-
-    return {"training_data": entity_mentions}
+    return await TrainingDataService(db=db).get_training_data(article_id)
