@@ -4,12 +4,11 @@ import ast
 
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.auth import api_key_auth
-from app.core.dependencies import get_ner_model
+from app.core.dependencies import get_ner_model, get_embedder
 from app.models import Entity, Topic, Sentiment, Article, EntityMention
 from app.schemas import EntityCreate, TopicCreate, SentimentCreate, EntityMentionsDetect
 from app.jobs.load_article_job import enqueue_load_article
@@ -19,14 +18,12 @@ from app.services import Embedder, Preprocessor, Translator, ArticleGenerator
 
 router = APIRouter(prefix="/etl", tags=["etl"])
 
-embedder = Embedder()
-
 @router.post(
     "/entity", 
     dependencies=[Depends(api_key_auth)],
     response_model_exclude_none=True
 )
-async def create_entity(data: EntityCreate, db: AsyncSession = Depends(get_db)):
+async def create_entity(data: EntityCreate, db: AsyncSession = Depends(get_db), embedder: Embedder = Depends(get_embedder)):
     entity = Entity(
         apa_id=data.apa_id,
         name=data.name,
@@ -50,7 +47,7 @@ async def create_entity(data: EntityCreate, db: AsyncSession = Depends(get_db)):
     dependencies=[Depends(api_key_auth)],
     response_model_exclude_none=True
 )
-async def create_topic(data: TopicCreate, db: AsyncSession = Depends(get_db)):
+async def create_topic(data: TopicCreate, db: AsyncSession = Depends(get_db), embedder: Embedder = Depends(get_embedder)):
     topic = Topic(name=data.name, apa_id=data.apa_id, vector=embedder.get_embedding(data.name), type=data.type)
     db.add(topic)
     try:
@@ -68,7 +65,7 @@ async def create_topic(data: TopicCreate, db: AsyncSession = Depends(get_db)):
     dependencies=[Depends(api_key_auth)],
     response_model_exclude_none=True
 )
-async def create_sentiment(data: SentimentCreate, db: AsyncSession = Depends(get_db)):
+async def create_sentiment(data: SentimentCreate, db: AsyncSession = Depends(get_db), embedder: Embedder = Depends(get_embedder)):
     sentiment = Sentiment(name=data.name, apa_id=data.apa_id, vector=embedder.get_embedding(data.name), type=data.type)
     db.add(sentiment)
     try:
@@ -104,28 +101,6 @@ async def import_xml_articles(
         "message": "File processing started in background"
         }
 
-@router.post(
-    "/article/{article_id}/entity_mentions",
-    dependencies=[Depends(api_key_auth)],
-    response_model_exclude_none=True
-)
-async def detect_entity_mentions(
-    article_id: uuid.UUID, 
-    # ner_model = Depends(get_ner_model), 
-    db: AsyncSession = Depends(get_db)
-):
-    enqueue_entity_mentions(article_id)
-    return {"message": "Entity mentions detection started in background", "article_id": article_id}
-
-@router.get(
-    "/article/{article_id}",
-    dependencies=[Depends(api_key_auth)],
-    response_model_exclude_none=True
-)
-async def get_entity_mentions(article_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
-    article = await db.get(Article, article_id)
-    return {"article": article}
-
 @router.get(
     "/entity/{entity_id}",
     dependencies=[Depends(api_key_auth)],
@@ -134,36 +109,3 @@ async def get_entity_mentions(article_id: uuid.UUID, db: AsyncSession = Depends(
 async def get_entity_mentions(entity_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
     entity = await db.get(Entity, entity_id)
     return {"entity": entity.name}
-
-@router.get(
-    "/article/{article_id}/triplets",
-    dependencies=[Depends(api_key_auth)],
-    response_model_exclude_none=True
-)
-async def get_article_triplets(
-    article_id: uuid.UUID, 
-    db: AsyncSession = Depends(get_db)
-):
-    query = text(
-        """
-        SELECT entities.name AS entity_name, sentiments.name AS sentiment_name, topics.name AS topic_name
-        FROM article_entity_sentiment_topics
-        JOIN entities ON article_entity_sentiment_topics.entity_id = entities.id
-        JOIN sentiments ON article_entity_sentiment_topics.sentiment_id = sentiments.id
-        LEFT JOIN topics ON article_entity_sentiment_topics.topic_id = topics.id
-        WHERE article_entity_sentiment_topics.article_id = :article_id
-        """
-    )
-
-    # Fetch all results
-    rows = await db.execute(query, {"article_id": article_id})
-
-    # Format the results as a list of dictionaries
-    article_entity_sentiment_topics = [
-        {"entity": row.entity_name, "sentiment": row.sentiment_name, "topic": row.topic_name}
-        for row in rows
-    ]
-
-    return {"article_entity_sentiment_topics": article_entity_sentiment_topics}
-
-    

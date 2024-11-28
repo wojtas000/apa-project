@@ -11,7 +11,6 @@ class NamedEntityLinker:
         most_similar_idx = np.argmax(similarities)
         return similarities[most_similar_idx], most_similar_idx
 
-
     def get_most_similar_name(self, name: str, entity_names: List[str]):
         similarities = [fuzz.partial_ratio(name, entity_name) for entity_name in entity_names]
         most_similar_idx = np.argmax(similarities)

@@ -1,5 +1,6 @@
 import asyncio
 import warnings
+import ast
 
 from redis.utils import from_url
 from rq import Queue, Retry, get_current_job
@@ -8,27 +9,17 @@ from typing import Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.sql import text
+
 from app.core.database import sessionmanager
 from app.core.config import settings
+from app.core.dependencies import get_ner_model, get_embedder
 from app.models import Entity, EntityMention, Article
 from app.services import Embedder, NamedEntityLinker, NERModel
 
-from flair.models import SequenceTagger
-import ast
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-ner_model = None
-
-def get_or_initialize_ner_model():
-    global ner_model
-    if ner_model is None:
-        ner_model = NERModel(tagger=SequenceTagger.load("flair/ner-english"))
-    return ner_model
-
-
 queue = Queue('entity-mentions', connection=from_url(settings.redis_url), default_timeout=settings.rq_timeout)
-
 
 def enqueue_entity_mentions(article_id: str):
     return queue.enqueue_call(
@@ -40,8 +31,8 @@ def enqueue_entity_mentions(article_id: str):
 
 async def detect_entity_mentions(article_id: str):
     named_entity_linker = NamedEntityLinker()
-    embedder = Embedder()
-    ner_model = get_or_initialize_ner_model()
+    embedder = get_embedder()
+    ner_model = get_ner_model()
     
     async with sessionmanager.session() as session:
         async with session.begin():
@@ -69,15 +60,22 @@ async def detect_entity_mentions(article_id: str):
                         similarity
                     )
             
-            session.commit()
+            await session.commit()
     return {"article_id": article_id}
 
 async def get_entities(session, article_id: str):
     query = text("""
-        SELECT entities.id, entities.name, entities.vector
-        FROM entities
-        JOIN article_entity_sentiment_topics ON article_entity_sentiment_topics.entity_id = entities.id
-        WHERE article_entity_sentiment_topics.article_id = :article_id
+        SELECT 
+            entities.id, 
+            entities.name, 
+            entities.vector
+        FROM 
+            entities
+        JOIN 
+            article_entity_sentiment_topics 
+            ON article_entity_sentiment_topics.entity_id = entities.id
+        WHERE 
+            article_entity_sentiment_topics.article_id = :article_id
         """
     )
     result = await session.execute(query, {"article_id": article_id})

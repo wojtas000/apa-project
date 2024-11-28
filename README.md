@@ -17,7 +17,7 @@ python -m scripts.start_worker
 6. Admin panel at `localhost:8000/admin/`
 7. Database backup:
 ```
-docker exec -t <container_id_or_name> pg_dump -U <username> <database_name> > backup.sql
+docker exec -t 72278957f6f4 pg_dump -U postgres postgres > backups/backup.sql
 
 ```
 8. Database migrations:
