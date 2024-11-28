@@ -1,3 +1,5 @@
+import random
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from app.models.article import Article
@@ -60,3 +62,17 @@ class ArticleRepository(BaseRepository):
 
         rows = await self.db.execute(query, {"article_id": id})
         return rows.all()
+
+
+    async def get_train_test_dev_split(self, seed=42):
+        query = text("SELECT id FROM articles WHERE language = 'ENG'")
+        rows = await self.db.execute(query)
+        articles = rows.all()
+
+        random.seed(seed)
+        random.shuffle(articles)
+        n = len(articles)
+        train = articles[:int(0.8*n)]
+        test = articles[int(0.8*n):int(0.9*n)]
+        dev = articles[int(0.9*n):]
+        return train, test, dev
