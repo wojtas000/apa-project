@@ -1,27 +1,35 @@
 import uuid
+from typing import Optional, List
 
-from pathlib import Path
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from pathlib import Path
 
 from app.core.database import get_db
 from app.core.auth import api_key_auth
+from app.core.config import settings
 from app.repositories import ArticleRepository
 from app.jobs.entity_mentions_job import enqueue_entity_mentions
 from app.services import ArticleService
+from app.schemas.article import TrainTestDevSplit
 
 router = APIRouter(prefix="/article", tags=["article"])
 
 
-@router.get(
+@router.post(
     "/train_test_dev_split",
     dependencies=[Depends(api_key_auth)],
     response_model_exclude_none=True
 )
-async def get_train_test_dev_split(db: AsyncSession = Depends(get_db), dataset_name: str = 'dataset', with_ambivalent: bool = False):
-    app_root = Path(__file__).resolve().parent
-    dataset_path = app_root / "datasets" / dataset_name 
+async def get_train_test_dev_split(
+    data: TrainTestDevSplit, 
+    db: AsyncSession = Depends(get_db)
+):
+
+    dataset_name = data.dataset_name
+    with_ambivalent = data.with_ambivalent
+
+    dataset_path = Path(settings.app_root) / "intergrated_datasets/apc" / dataset_name 
 
     if not dataset_path.exists():
         dataset_path.mkdir(parents=True, exist_ok=True)
@@ -45,7 +53,11 @@ async def get_train_test_dev_split(db: AsyncSession = Depends(get_db), dataset_n
                     file.write(f"{data_row['entity_name']}\n")
                     file.write(f"{data_row['sentiment']}\n")
 
-    return {"message": "Train, test, and dev datasets have been written to the respective files."}
+    return {
+        "train_path": train_file_path, 
+        "test_path": test_file_path, 
+        "dev_path": dev_file_path
+    }  
 
 
 @router.post(
@@ -71,13 +83,18 @@ async def get_article(article_id: uuid.UUID, db: AsyncSession = Depends(get_db))
     return {"article": article}
 
 @router.get(
-    "",
+    "/",
     dependencies=[Depends(api_key_auth)],
     response_model_exclude_none=True
 )
-async def get_articles(db: AsyncSession = Depends(get_db)):
+async def get_articles(
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, le=100),
+    language: Optional[str] = None
+):
     article_repo = ArticleRepository(db)
-    articles = await article_repo.get_all()
+    articles = await article_repo.get_all(page, page_size, language)
     return {"articles": articles}
 
 @router.get(

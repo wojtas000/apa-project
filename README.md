@@ -8,6 +8,11 @@ pip install -r requirements.txt
 ```
 fastapi run --reload app/main.py
 ```
+alternatively
+```
+uvicorn app.main:app --reload --reload-dir=app --host=0.0.0.0 --port=8000
+```
+
 4. Start redis worker for background task processing with
 ```
 python -m scripts.start_worker
@@ -17,7 +22,7 @@ python -m scripts.start_worker
 6. Admin panel at `localhost:8000/admin/`
 7. Database backup:
 ```
-docker exec -t 72278957f6f4 pg_dump -U postgres postgres > backups/backup.sql
+docker exec -t <container-id> pg_dump -U postgres postgres > backups/backup.sql
 
 ```
 8. Database migrations:
@@ -25,9 +30,16 @@ docker exec -t 72278957f6f4 pg_dump -U postgres postgres > backups/backup.sql
 alembic revision --autogenerate -m "your_migration_message"
 alembic upgrade head
 ```
+9. Create requirements.txt (lockfile with all dependencies)
+```bash
+pip-compile -v --resolver=backtracking requirements.in --output-file requirements.txt
+```
+10. MLFlow
+```bash
+mlflow ui   --backend-store-uri postgresql://mlflow_user:mlflow_password@localhost:5432/mlflow_db   --default-artifact-root ./mlruns
+```
 
-
-9. Pyabsa setup:
+11. Pyabsa setup:
 ```bash
 !git clone https://github.com/yangheng95/PyABSA --depth=1
 %cd PyABSA

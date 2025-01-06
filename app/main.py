@@ -15,7 +15,8 @@ from app.services import Translator
 logging.basicConfig(level=logging.DEBUG)
 
 models = {}
-models["ner"] = SequenceTagger.load("flair/ner-english")
+# models["ner"] = SequenceTagger.load("flair/ner-english")
+models['ner'] = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,4 +48,4 @@ app.add_middleware(
 app.include_router(article_router)
 app.include_router(etl_router)
 app.include_router(inference_router)
-app.include_router(training_router)
+app.include_router(train_router)

@@ -3,7 +3,9 @@
 test.ipynb
 /backups
 /ml-models
-/datasets
+/myenv
+/integrated_datasets
+/checkpoints
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

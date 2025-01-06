@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
+from pathlib import Path
 import os
 
 load_dotenv()
@@ -15,5 +16,6 @@ class Settings(BaseSettings):
     rq_timeout: int = os.getenv("RQ_TIMEOUT", 120)
     flair_cache_root: str = os.getenv("FLAIR_CACHE_ROOT")
     entity_similarity_threshold: float = os.getenv("ENTITY_SIMILARITY_THRESHOLD", 0.7)
+    app_root: str = str(Path(__file__).resolve().parents[2])
 
 settings = Settings()

@@ -1,7 +1,8 @@
 import random
+from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import text
+from sqlalchemy import text, select
 from app.models.article import Article
 from app.repositories.base_repository import BaseRepository
 
@@ -64,8 +65,6 @@ class ArticleRepository(BaseRepository):
         rows = await self.db.execute(text(query), {"article_id": id})
         return rows.all()
 
-
-
     async def get_train_test_dev_split(self, seed=42):
         query = text("SELECT id FROM articles WHERE language = 'ENG'")
         rows = await self.db.execute(query)
@@ -78,3 +77,13 @@ class ArticleRepository(BaseRepository):
         test = articles[int(0.8*n):int(0.9*n)]
         dev = articles[int(0.9*n):]
         return train, test, dev
+
+    async def get_all(self, page: int = 1, page_size: int = 10, language: Optional[str] = None):
+        query = select(self.model)
+        if language:
+            query = query.filter(self.model.language == language)
+        if page:
+            query = query.limit(page_size).offset((page - 1) * page_size)
+
+        result = await self.db.execute(query)
+        return result.scalars().all() 
