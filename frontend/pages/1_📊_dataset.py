@@ -16,7 +16,7 @@ def get_articles(page: int = 1, page_size: int = 5, language: str = 'ENG'):
         return {"articles": []}
 
 def get_article_by_id(article_id):
-    response = requests.get(f"{BASE_URL}/article/{article_id}/training_data", headers=HEADERS)
+    response = requests.get(f"{BASE_URL}/article/{article_id}", headers=HEADERS)
     if response.status_code == 200:
         return response.json()
     else:
@@ -52,15 +52,14 @@ if articles and "articles" in articles:
             st.session_state.articles = get_articles(page=st.session_state.page)
             st.rerun()
 
-    article_ids = df['id'].tolist()
-    selected_article_id = st.selectbox("Select an article to view details", article_ids)
-    
+
     st.subheader("Article Details")
 
+    selected_article_id = st.selectbox("Select an article to view details", df['id'].tolist())
+    
     if selected_article_id:
         article_details = get_article_by_id(selected_article_id)
-        print(article_details)
-        st.write(article_details)
-        if article_details and "trainnig_data" in article_details:
-            with st.expander(f"Details for Article {selected_article_id}"):
-                st.json(article_details['training_data'])
+        with st.expander(f"Details for Article {selected_article_id}"):
+            st.write(f"ID: {article_details['article']['apa_id']}")
+            st.write(f"Title: {article_details['article']['title']}")
+            st.write(f"Article: {article_details['article']['article']}")
