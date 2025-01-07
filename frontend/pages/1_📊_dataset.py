@@ -3,10 +3,8 @@ import requests
 import pandas as pd
 
 from utils import truncate_text
+from settings import BASE_URL, HEADERS
 
-# Constants
-BASE_URL = "http://localhost:8000"
-HEADERS = {'api-key': '1234567890'}
 
 def get_articles(page: int = 1, page_size: int = 5, language: str = 'ENG'):
     params = {"page": page, "page_size": page_size, "language": language}

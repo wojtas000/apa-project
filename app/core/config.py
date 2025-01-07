@@ -18,4 +18,8 @@ class Settings(BaseSettings):
     entity_similarity_threshold: float = os.getenv("ENTITY_SIMILARITY_THRESHOLD", 0.7)
     app_root: str = str(Path(__file__).resolve().parents[2])
 
+    minio_endpoint: str = os.getenv("MINIO_ENDPOINT")
+    minio_access_key: str = os.getenv("MINIO_ACCESS_KEY")
+    minio_secret_key: str = os.getenv("MINIO_SECRET_KEY")
+
 settings = Settings()

@@ -39,7 +39,22 @@ pip-compile -v --resolver=backtracking requirements.in --output-file requirement
 mlflow ui   --backend-store-uri postgresql://mlflow_user:mlflow_password@localhost:5432/mlflow_db   --default-artifact-root ./mlruns
 ```
 
-11. Pyabsa setup:
+11. MinIO setup
+```bash
+mkdir -p ${HOME}/minio/data
+
+docker run \
+   -p 9000:9000 \
+   -p 9001:9001 \
+   --user $(id -u):$(id -g) \
+   --name minio1 \
+   -e "MINIO_ROOT_USER=ROOTUSER" \
+   -e "MINIO_ROOT_PASSWORD=CHANGEME123" \
+   -v ${HOME}/minio/data:/data \
+   quay.io/minio/minio server /data --console-address ":9001"
+```
+
+12. Pyabsa setup:
 ```bash
 !git clone https://github.com/yangheng95/PyABSA --depth=1
 %cd PyABSA

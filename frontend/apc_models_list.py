@@ -1,0 +1,20 @@
+MODELS = [
+    "LSA_T",
+    "LSA_S",
+    "FAST_LSA_T",
+    "FAST_LSA_S",
+    "FAST_LSA_T_V2",
+    "FAST_LSA_S_V2",
+    "DLCF_DCA_BERT",
+    "DLCFS_DCA_BERT",
+    "LCF_BERT",
+    "FAST_LCF_BERT",
+    "LCF_DUAL_BERT",
+    "LCFS_BERT",
+    "FAST_LCFS_BERT",
+    "LCFS_DUAL_BERT",
+    "LCA_BERT",
+    "BERT_MLP",
+    "BERT_SPC",
+    "FAST_LCF_BERT_ATT"
+]
