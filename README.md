@@ -1,4 +1,9 @@
-# Quickstart
+# Actor-based sentiment analysis in press news articles
+
+## System design
+![Diagram](resources/diagram.png)
+
+## Quickstart
 1. Install packages with
 ```
 pip install -r requirements.txt
@@ -23,7 +28,6 @@ python -m scripts.start_worker
 7. Database backup:
 ```
 docker exec -t <container-id> pg_dump -U postgres postgres > backups/backup.sql
-
 ```
 8. Database migrations:
 ```
@@ -52,35 +56,4 @@ docker run \
    -e "MINIO_ROOT_PASSWORD=CHANGEME123" \
    -v ${HOME}/minio/data:/data \
    quay.io/minio/minio server /data --console-address ":9001"
-```
-
-12. Pyabsa setup:
-```bash
-!git clone https://github.com/yangheng95/PyABSA --depth=1
-%cd PyABSA
-!pip install -r requirements.txt
-!python setup.py install
-```
-
-```python
-from pyabsa import download_all_available_datasets
-
-download_all_available_datasets()
-
-from pyabsa import ModelSaveOption, DeviceTypeOption
-from pyabsa import AspectPolarityClassification as APC
-config = APC.APCConfigManager.get_apc_config_english()
-config.num_epoch = 1
-config.model = APC.APCModelList.FAST_LSA_T_V2
-config.output_dim = 4
-config.label_to_index = label_to_index
-config.index_to_label = index_to_label
-trainer = APC.APCTrainer(
-    config=config,
-    dataset='200.apa',
-    from_checkpoint="english",
-    auto_device=DeviceTypeOption.AUTO,
-    checkpoint_save_mode=ModelSaveOption.SAVE_FULL_MODEL,
-    load_aug=False,
-)
 ```
