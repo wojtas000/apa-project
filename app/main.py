@@ -14,13 +14,22 @@ from app.services import Translator
 
 logging.basicConfig(level=logging.DEBUG)
 
-models = {}
-models["ner"] = SequenceTagger.load("flair/ner-english")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Translator.install_package(from_code='de', to_code='en')
+    from pyabsa import AspectPolarityClassification as APC
+
+    app.state.models = {}
+    app.state.models["ner"] = SequenceTagger.load("flair/ner-english")
+    app.state.models["sentiment_classifier"] = APC.SentimentClassifier(
+        checkpoint=settings.sentiment_classifier_checkpoint
+    )
+    
     yield
+
+    for model in app.state.models.values():
+        del model
+    app.state.models.clear()
 
 app = FastAPI(lifespan=lifespan)
 init_admin(app)
@@ -47,4 +56,5 @@ app.add_middleware(
 app.include_router(article_router)
 app.include_router(etl_router)
 app.include_router(inference_router)
-app.include_router(training_router)
+app.include_router(train_router)
+app.include_router(dataset_router)
