@@ -32,7 +32,7 @@ async def train(
         mlflow.log_param("checkpoint_save_mode", data.checkpoint_save_mode)
         mlflow.log_params(config)
         
-        save_path = f"{settings.app_root}/ml-models/{run_name}"
+        save_path = f"{settings.app_root}/ml-models/inference/{run_name}"
         trainer_args = {
             "config": config,
             "dataset": data.dataset_name,

@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     flair_cache_root: str = os.getenv("FLAIR_CACHE_ROOT")
     entity_similarity_threshold: float = os.getenv("ENTITY_SIMILARITY_THRESHOLD", 0.7)
     app_root: str = str(Path(__file__).resolve().parents[2])
+    sentiment_classifier_checkpoint: str = app_root + os.getenv("SENTIMENT_CLASSIFIER_CHECKPOINT", "/ml-models/inference/fast_lsa_t_v2_apa_acc_81.65_f1_81.05")
 
     minio_endpoint: str = os.getenv("MINIO_ENDPOINT")
     minio_access_key: str = os.getenv("MINIO_ACCESS_KEY")

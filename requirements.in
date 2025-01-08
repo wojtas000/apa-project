@@ -24,6 +24,6 @@ rq_dashboard_fast==0.5.9
 sqladmin==0.20.0
 SQLAlchemy==2.0.30
 torch==2.5.1
-transformers==4.46.1
+transformers==4.29.0
 uv==0.5.1
 uvicorn==0.32.0
