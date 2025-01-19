@@ -32,14 +32,27 @@ async def lifespan(app: FastAPI):
     app.state.models.clear()
 
 app = FastAPI(lifespan=lifespan)
+
+# postgres
 init_admin(app)
 
+# redis
 rq_dashboard = RedisQueueDashboard(
     redis_url=settings.redis_url, 
     prefix="/rq"
     )
 
 app.mount("/rq", rq_dashboard)
+
+# mlflow
+@app.get("/mlflow")
+async def redirect_mlflow():
+    return RedirectResponse(url=settings.mlflow_tracking_uri)
+
+# minio
+@app.get("/minio")
+async def redirect_minio():
+    return RedirectResponse(url=settings.minio_frontend)
 
 @app.get("/")
 async def redirect_docs():

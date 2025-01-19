@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     app_root: str = str(Path(__file__).resolve().parents[2])
     sentiment_classifier_checkpoint: str = app_root + os.getenv("SENTIMENT_CLASSIFIER_CHECKPOINT", "/ml-models/inference/fast_lsa_t_v2_apa_acc_81.65_f1_81.05")
 
+    mlflow_tracking_uri: str = os.getenv("MLFLOW_TRACKING_URI")
+
+    minio_frontend: str = os.getenv("MINIO_FRONTEND")
     minio_endpoint: str = os.getenv("MINIO_ENDPOINT")
     minio_access_key: str = os.getenv("MINIO_ACCESS_KEY")
     minio_secret_key: str = os.getenv("MINIO_SECRET_KEY")
