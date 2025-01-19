@@ -9,7 +9,7 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - ./docker/backend/.env
     depends_on:
       - pgvector
       - redis
@@ -34,7 +34,7 @@ services:
     ports:
       - "8501:8501"
     env_file:
-      - .env
+      - ./docker/frontend/.env
     depends_on:
       - backend
     networks:
@@ -43,7 +43,7 @@ services:
 
   pgvector:
     image: ankane/pgvector:latest
-    container_name: postgres
+    container_name: postgres 
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -51,7 +51,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /var/lib/docker/volumes/apa-db/_data
+      - apa-db:/var/lib/postgresql/data
     networks:
       - network
     restart: unless-stopped
@@ -66,11 +66,11 @@ services:
     restart: unless-stopped
 
   mlflow:
-    image: ghcr.io/mlflow/mlflow:latest
+    build:
+      context: .
+      dockerfile: docker/mlflow/Dockerfile
     container_name: mlflow
-    environment:
-      - MLFLOW_TRACKING_URI=${MLFLOW_TRACKING_URI}
-      - MLFLOW_ARTIFACT_URI=${MLFLOW_ARTIFACT_URI}
+    command: mlflow ui --backend-store-uri ${MLFLOW_BACKEND_STORE_URI} --default-artifact-root ${MLFLOW_ARTIFACT_URI} --host 0.0.0.0
     ports:
       - "5000:5000"
     volumes:
@@ -80,23 +80,26 @@ services:
     restart: unless-stopped
 
   minio:
-    image: minio/minio:latest
+    image: quay.io/minio/minio:latest
     container_name: minio
     environment:
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-    command: server /data
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio_data:/data
+      - ${HOME}/minio/data:/data
+    user: "${UID}:${GID}"
     networks:
       - network
     restart: unless-stopped
 
 volumes:
-  pgvector_data:
+  apa-db:
+    external: true
+    name: apa-db
   mlflow_data:
   minio_data:
 

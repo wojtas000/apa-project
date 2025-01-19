@@ -21,6 +21,9 @@ COPY ./app ./app
 # Copy the ml-models into the container
 COPY ./ml-models ./ml-models
 
+# Copy the datasets into the container
+COPY ./integrated_datasets ./integrated_datasets
+
 # Expose the port the app will run on
 EXPOSE 8000
 
