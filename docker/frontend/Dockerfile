@@ -2,22 +2,19 @@
 FROM python:3.10-slim
 
 # Set the working directory
-WORKDIR /apa-ml
-
-# Copy flair models into the container
-COPY ./ml-models/flair ./ml-models/flair
+WORKDIR /frontend
 
 # Copy the requirements.txt into the container
-COPY requirements.in .
+COPY ./docker/frontend/requirements.txt .
 
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.in
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the FastAPI application files into the container
-COPY ./app .
+COPY ./frontend .
 
 # Expose the port the app will run on
-EXPOSE 8000
+EXPOSE 8501
 
 # Command to run the FastAPI app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["streamlit", "run", "app.py"]
