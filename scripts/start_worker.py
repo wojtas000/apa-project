@@ -17,12 +17,10 @@ def run_rq_worker():
     else:
         raise ValueError("DATABASE_URL not set")
 
-    subprocess.run(["python", "-m", "alembic", "upgrade", "head"], check=True)
-
     rq_pool_size = os.getenv('RQ_POOL_SIZE', '5')
     print(f"RQ_POOL_SIZE: {rq_pool_size}")
 
-    queues = ['load-xml', 'entity-mentions']
+    queues = ['load-xml', 'entity-mentions', 'training']
     print(f"QUEUES: {queues}")
 
     command = [

@@ -16,6 +16,10 @@ services:
       - mlflow
     networks:
       - network
+    volumes:
+      - ./app:/backend/app
+      - ./ml-models:/backend/ml-models
+      - ./integrated_datasets:/backend/integrated_datasets
     deploy:
       restart_policy:
         condition: on-failure
@@ -70,11 +74,14 @@ services:
       context: .
       dockerfile: docker/mlflow/Dockerfile
     container_name: mlflow
-    command: mlflow ui --backend-store-uri ${MLFLOW_BACKEND_STORE_URI} --default-artifact-root ${MLFLOW_ARTIFACT_URI} --host 0.0.0.0
+    command: |
+      mlflow ui
+      --backend-store-uri ${MLFLOW_BACKEND_STORE_URI}
+      --default-artifact-root ${MLFLOW_ARTIFACT_URI}
+      --registry-store-uri ${MLFLOW_REGISTRY_STORE_URI}
+      --host 0.0.0.0    
     ports:
       - "5000:5000"
-    volumes:
-      - mlflow_data:/mlflow
     networks:
       - network
     restart: unless-stopped
@@ -100,7 +107,6 @@ volumes:
   apa-db:
     external: true
     name: apa-db
-  mlflow_data:
   minio_data:
 
 networks:

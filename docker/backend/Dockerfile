@@ -15,17 +15,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy the FastAPI application files into the container
+# Copy scripts into the container
+COPY ./scripts ./scripts
+
+# Copy the app code into the container
 COPY ./app ./app
-
-# Copy the ml-models into the container
-COPY ./ml-models ./ml-models
-
-# Copy the datasets into the container
-COPY ./integrated_datasets ./integrated_datasets
 
 # Expose the port the app will run on
 EXPOSE 8000
 
 # Command to run the FastAPI app
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "python -m scripts.start_worker & uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+
