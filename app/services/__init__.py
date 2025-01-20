@@ -5,6 +5,7 @@ from .article_generator import ArticleGenerator
 from .ner_model import NERModel
 from .named_entity_linker import NamedEntityLinker
 from .article_service import ArticleService
+from .minio_service import MinioService
 
 __all__ = [
     "Embedder", 
@@ -13,5 +14,6 @@ __all__ = [
     "ArticleGenerator",
     "NERModel",
     "NamedEntityLinker",
-    "ArticleService"
+    "ArticleService",
+    "MinioService"
 ]
