@@ -13,8 +13,14 @@ docker-compose up
 This command will start the application and all the required services. Frontend application will be accessible at `localhost:8501` and backend at `localhost:8000`.
 
 4. Database backup:
+
+Dump:
 ```
 docker exec -t postgres pg_dump -U postgres postgres > backups/backup.sql
+```
+Restore:
+```
+docker exec -i postgres psql -U postgres -d your_database_name < backups/backup.sql
 ```
 5. Database migrations:
 ```
